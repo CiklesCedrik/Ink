@@ -1,0 +1,39 @@
+# Fields with ** must be set! (If its enabled)
+
+# Sends messages from Minecraft to Discord and vice versa
+discord:
+  enabled: false
+  #** Token of Discord BOT
+  token: "thisIsNotAToken"
+  #** The channel ID on which the messages are to be sent or read
+  channel: 1234567890987654321
+  # If available messages get send over the defined webhook
+  webhook-url: "https://discord.com/api/webhooks/id/token"
+  # Messages from the Server will have this image (Player Join, Quit, Advancement, Death)
+  server-image: "https://www.freeiconspng.com//uploads/minecraft-server-icon-4.png"
+
+messages:
+  player-join: "&a[+] &r%player%"
+  player-quit: "&c[-] &r%player%"
+  # REQUIRED for discord-chat synchronisation
+  # %sourceDisplayName% (prefix suffix) or %source% (for player the default name)
+  chat: "%source%: &7%message%"
+
+enchantments:
+  enabled: false
+  # Don't drop items they are transferred into the Inventory of the player who broke the Block.
+  telekinesis: true
+
+professions:
+  enabled: false
+
+mob-griefing:
+  # Disables block damage by Creeper Explosions
+  creeper-explosions: true
+  # Fire charges wich are shoot by a Ghast
+  ghast-explosions: true
+  # Block Pickup by Enderman
+  enderman: true
+
+# If a player dies, the inventory contents will not drop, instead there will be a "Grave"
+graves: false

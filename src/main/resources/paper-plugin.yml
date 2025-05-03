@@ -1,0 +1,11 @@
+name: ${name}
+version: '${version}'
+main: de.cikles.ciklesmc.core.CiklesMC
+description: ${description}
+api-version: '${apiVersion}'
+loader: de.cikles.ciklesmc.core.CiklesMCBootstrap
+bootstrapper: de.cikles.ciklesmc.core.CiklesMCBootstrap
+load: STARTUP
+folia-supported: true
+authors: [ Cedrik B. ]
+website: https://cikles.de/minecraft/plugins/CiklesMC
