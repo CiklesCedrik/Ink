@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "de.cikles"
-version = "1.1-ALPHA"
+version = "1.2-ALPHA"
 
 repositories {
     gradlePluginPortal()

@@ -186,6 +186,12 @@ public class Config {
         ArrayList<Enchantments> list = new ArrayList<>(1);
         if (CiklesMC.getInstance().getConfig().getBoolean("enchantments.telekinesis"))
             list.add(Enchantments.TELEKINESIS);
+        if (CiklesMC.getInstance().getConfig().getBoolean("enchantments.tree_chopper"))
+            list.add(Enchantments.TREE_CHOPPER);
+        if (CiklesMC.getInstance().getConfig().getBoolean("enchantments.vein"))
+            list.add(Enchantments.VEIN);
+        if (CiklesMC.getInstance().getConfig().getBoolean("enchantments.oracle"))
+            list.add(Enchantments.ORACLE);
         return list;
     }
 

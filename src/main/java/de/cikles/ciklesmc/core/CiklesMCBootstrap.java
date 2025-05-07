@@ -16,30 +16,52 @@ import io.papermc.paper.plugin.loader.PluginClasspathBuilder;
 import io.papermc.paper.plugin.loader.PluginLoader;
 import io.papermc.paper.plugin.loader.library.impl.MavenLibraryResolver;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.event.RegistryEvents;
+import io.papermc.paper.registry.keys.BlockTypeKeys;
+import io.papermc.paper.registry.keys.tags.BlockTypeTagKeys;
 import io.papermc.paper.registry.keys.tags.EnchantmentTagKeys;
+import io.papermc.paper.registry.keys.tags.ItemTypeTagKeys;
 import io.papermc.paper.tag.PostFlattenTagRegistrar;
+import org.bukkit.block.BlockType;
 import org.bukkit.inventory.ItemType;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
 import static de.cikles.ciklesmc.core.CiklesMCBootstrap.CiklesCommands.*;
+import static de.cikles.ciklesmc.enchantments.Enchantments.ENCHANTABLE_TOOL;
+import static de.cikles.ciklesmc.enchantments.Vein.ORES;
 import static net.kyori.adventure.key.Key.key;
 
-@SuppressWarnings({"unused"})
 public class CiklesMCBootstrap implements PluginBootstrap, PluginLoader {
     @Override
     public void bootstrap(BootstrapContext context) {
         final LifecycleEventManager<BootstrapContext> manager = context.getLifecycleManager();
-
         manager.registerEventHandler(LifecycleEvents.TAGS.postFlatten(RegistryKey.ITEM), event -> {
-            final PostFlattenTagRegistrar<ItemType> registrar = event.registrar();
-            List.of(Enchantments.values()).forEach(enchantments -> enchantments.ciklesEnchant.registerTag(registrar));
+            PostFlattenTagRegistrar<ItemType> registrar = event.registrar();
+            List<TypedKey<ItemType>> enchantableTools = new ArrayList<>(registrar.getTag(ItemTypeTagKeys.ENCHANTABLE_MINING));
+            enchantableTools.addAll(registrar.getTag(ItemTypeTagKeys.ENCHANTABLE_SHARP_WEAPON));
+            registrar.setTag(ENCHANTABLE_TOOL, enchantableTools);
+        });
+        manager.registerEventHandler(LifecycleEvents.TAGS.postFlatten(RegistryKey.BLOCK), event -> {
+            PostFlattenTagRegistrar<BlockType> registrar = event.registrar();
+            List<TypedKey<BlockType>> ores = new ArrayList<>(registrar.getTag(BlockTypeTagKeys.COAL_ORES));
+            ores.addAll(registrar.getTag(BlockTypeTagKeys.COPPER_ORES));
+            ores.addAll(registrar.getTag(BlockTypeTagKeys.IRON_ORES));
+            ores.addAll(registrar.getTag(BlockTypeTagKeys.GOLD_ORES));
+            ores.addAll(registrar.getTag(BlockTypeTagKeys.DIAMOND_ORES));
+            ores.addAll(registrar.getTag(BlockTypeTagKeys.EMERALD_ORES));
+            ores.addAll(registrar.getTag(BlockTypeTagKeys.REDSTONE_ORES));
+            ores.addAll(registrar.getTag(BlockTypeTagKeys.LAPIS_ORES));
+            ores.add(BlockTypeKeys.NETHER_QUARTZ_ORE);
+            ores.add(BlockTypeKeys.ANCIENT_DEBRIS);
+            registrar.setTag(ORES, ores);
         });
         manager.registerEventHandler(RegistryEvents.ENCHANTMENT.freeze().newHandler(event -> List.of(Enchantments.values()).forEach(enchantments -> event.registry().register(enchantments.enchantmentTypedKey, c -> enchantments.ciklesEnchant.register(event, c)))));
         manager.registerEventHandler(LifecycleEvents.TAGS.postFlatten(RegistryKey.ENCHANTMENT), event -> event.registrar().addToTag(EnchantmentTagKeys.create(key("ciklesmc:enchantment")), Stream.of(Enchantments.values()).map(e -> e.enchantmentTypedKey).toList()));

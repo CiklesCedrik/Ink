@@ -23,6 +23,9 @@ enchantments:
   enabled: false
   # Don't drop items they are transferred into the Inventory of the player who broke the Block.
   telekinesis: true
+  tree_chopper: true
+  vein: true
+  oracle: true
 
 professions:
   enabled: false

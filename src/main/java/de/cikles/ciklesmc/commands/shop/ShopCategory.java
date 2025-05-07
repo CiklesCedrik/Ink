@@ -1,7 +1,6 @@
 package de.cikles.ciklesmc.commands.shop;
 
 import de.cikles.ciklesmc.core.CiklesMC;
-import de.cikles.ciklesmc.enchantments.Enchantments;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
@@ -656,7 +655,7 @@ public enum ShopCategory {
 
     private static List<ItemStack> enchantments() {
         List<ItemStack> enchantments = new ArrayList<>();
-        RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).stream().filter(e -> e.isTradeable() && !e.isCursed()).forEach(e -> {
+        RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).stream().filter(e -> e.getKey().namespace().equalsIgnoreCase("ciklesmc") || (e.isTradeable() && !e.isCursed())).forEach(e -> {
             ItemStack item = new ItemStack(Material.ENCHANTED_BOOK, 1);
             EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
             meta.addStoredEnchant(e, 1, true);
@@ -665,14 +664,6 @@ public enum ShopCategory {
             item.setAmount(e.getMaxLevel());
             enchantments.add(item);
         });
-        Enchantment telekinesis = RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(Enchantments.TELEKINESIS.enchantmentTypedKey);
-        if (telekinesis != null) {
-            ItemStack item = new ItemStack(Material.ENCHANTED_BOOK, 1);
-            EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
-            meta.addStoredEnchant(telekinesis, 1, true);
-            item.setItemMeta(meta);
-            enchantments.add(item);
-        }
         return enchantments;
     }
 

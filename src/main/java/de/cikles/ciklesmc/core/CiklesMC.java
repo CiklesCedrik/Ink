@@ -24,11 +24,9 @@ public class CiklesMC extends JavaPlugin {
     public static CiklesMC getInstance() {
         return (CiklesMC) getProvidingPlugin(CiklesMC.class);
     }
-
     @Override
     public void onEnable() {
         try {
-
 
             // register Event Listeners
             registerTranslations();

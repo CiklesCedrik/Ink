@@ -2,7 +2,6 @@ package de.cikles.ciklesmc.enchantments;
 
 import io.papermc.paper.registry.data.EnchantmentRegistryEntry;
 import io.papermc.paper.registry.event.RegistryFreezeEvent;
-import io.papermc.paper.registry.keys.tags.ItemTypeTagKeys;
 import net.kyori.adventure.text.Component;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Item;
@@ -35,7 +34,7 @@ public class Telekinesis extends Enchantments.CiklesEnchant {
         if (event.isCancelled()) return;
         if (!(event.getDamageSource().getCausingEntity() instanceof Player target)) return;
         ItemStack mainHand = target.getInventory().getItemInMainHand();
-        if (mainHand.getItemMeta() != null && mainHand.getItemMeta().getEnchants().keySet().stream().anyMatch(t -> t.key().equals(Enchantments.TELEKINESIS.enchantmentTypedKey))) {
+        if (mainHand.getItemMeta() != null && mainHand.getItemMeta().hasEnchant(Enchantments.TELEKINESIS.getEnchantment())) {
             target.getInventory().addItem(event.getDrops().toArray(ItemStack[]::new)).values().forEach(it -> target.getWorld().dropItemNaturally(target.getLocation(), it));
             event.getDrops().clear();
         }
@@ -43,9 +42,11 @@ public class Telekinesis extends Enchantments.CiklesEnchant {
 
     @Override
     public void register(RegistryFreezeEvent<Enchantment, EnchantmentRegistryEntry.Builder> event, EnchantmentRegistryEntry.Builder c) {
-        c.description(Component.text("Telekinesis")).supportedItems(event.getOrCreateTag(ItemTypeTagKeys.ENCHANTABLE_MINING))
+        c.description(Component.text("Telekinesis")).supportedItems(event.getOrCreateTag(Enchantments.ENCHANTABLE_TOOL))
                 .anvilCost(3)
-                .maxLevel(1).weight(1).minimumCost(EnchantmentRegistryEntry.EnchantmentCost.of(10, 1)).maximumCost(EnchantmentRegistryEntry.EnchantmentCost.of(15, 1))
+                .maxLevel(1).weight(3)
+                .minimumCost(EnchantmentRegistryEntry.EnchantmentCost.of(6, 1))
+                .maximumCost(EnchantmentRegistryEntry.EnchantmentCost.of(30, 1))
                 .activeSlots(EquipmentSlotGroup.HAND);
 
     }

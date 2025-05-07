@@ -98,7 +98,6 @@ public class GraveListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerDeath(PlayerDeathEvent event) {
-
         Player player = event.getPlayer();
         Location loc = getGraveLocation(player.getLocation(), 20);
 

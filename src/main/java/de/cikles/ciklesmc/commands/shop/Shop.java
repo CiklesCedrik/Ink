@@ -114,29 +114,25 @@ public class Shop extends LiteralArgumentBuilder<CommandSourceStack> implements 
         ItemMeta meta = result.getItemMeta();
 
 
-        HashMap<Enchantment, Integer> enchantments = new HashMap<>(firstMeta.getEnchants());
-        if (firstMeta instanceof EnchantmentStorageMeta enchantmentStorageMeta)
-            enchantments.putAll(enchantmentStorageMeta.getStoredEnchants());
-        secondMeta.getEnchants().forEach((enchantment, level) -> {
-            if (!enchantments.containsKey(enchantment) || enchantments.get(enchantment) < level)
-                enchantments.put(enchantment, level);
-        });
+        HashMap<Enchantment, Integer> enchantments = new HashMap<>();
+        getEnchantments(meta, enchantments);
+        getEnchantments(firstMeta, enchantments);
+        getEnchantments(secondMeta, enchantments);
+        if (meta instanceof EnchantmentStorageMeta enchantmentStorageMeta)
+            enchantments.forEach((enchantment, level) -> enchantmentStorageMeta.addStoredEnchant(enchantment, level, true));
+        else enchantments.forEach((enchantment, level) -> meta.addEnchant(enchantment, level, true));
+        result.setItemMeta(meta);
+        event.setResult(result);
 
-        if (secondMeta instanceof EnchantmentStorageMeta enchantmentStorageMeta)
+    }
+
+    private void getEnchantments(ItemMeta meta, Map<Enchantment, Integer> enchantments) {
+        enchantments.putAll(meta.getEnchants());
+        if (meta instanceof EnchantmentStorageMeta enchantmentStorageMeta)
             enchantmentStorageMeta.getStoredEnchants().forEach((enchantment, level) -> {
                 if (!enchantments.containsKey(enchantment) || enchantments.get(enchantment) < level)
                     enchantments.put(enchantment, level);
             });
-
-        if (meta instanceof EnchantmentStorageMeta enchantmentStorageMeta) {
-            enchantments.forEach((enchantment, level) -> enchantmentStorageMeta.addStoredEnchant(enchantment, level, true));
-            result.setItemMeta(enchantmentStorageMeta);
-            event.setResult(result);
-            return;
-        } else enchantments.forEach((enchantment, level) -> meta.addEnchant(enchantment, level, true));
-        result.setItemMeta(meta);
-        event.setResult(result);
-
     }
 
 
