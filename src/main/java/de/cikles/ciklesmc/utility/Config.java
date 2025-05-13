@@ -34,7 +34,6 @@ public class Config {
     private static @Nullable Component playerQuit;
     private static @Nullable Component chat;
     private static boolean enchantments;
-    private static boolean professions;
     private static boolean creeperExplosions;
     private static boolean ghastExplosions;
     private static boolean enderman;
@@ -90,10 +89,6 @@ public class Config {
         return enchantments;
     }
 
-    public static boolean professions() {
-        return professions;
-    }
-
     public static boolean creeperExplosions() {
         return creeperExplosions;
     }
@@ -133,8 +128,6 @@ public class Config {
         if (chat == null) renderer = null;
 
         enchantments = config.getBoolean("enchantments.enabled");
-
-        professions = config.getBoolean("professions.enabled");
 
         creeperExplosions = config.getBoolean("mob-griefing.creeper-explosions");
 

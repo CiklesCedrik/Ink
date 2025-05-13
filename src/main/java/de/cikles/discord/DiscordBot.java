@@ -26,7 +26,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.List;
 
 import static net.dv8tion.jda.api.requests.GatewayIntent.SCHEDULED_EVENTS;
 import static net.dv8tion.jda.api.requests.GatewayIntent.*;
@@ -80,10 +79,11 @@ public class DiscordBot {
     }
 
     public static void sendServerMessage(String msg) {
-        send("Server", msg.replaceAll("&[0-9a-fr]|§[0-9a-fr]|#[a-fA-F0-9]{6}", ""), Config.discordServerImage());
+        send("Server", msg, Config.discordServerImage());
     }
 
-    public static void send(String name, String msg, String avatarUrl) {
+    public static void send(String name, String message, String avatarUrl) {
+        final String msg = message.replaceAll("&[0-9a-fr]|§[0-9a-fr]|#[a-fA-F0-9]{6}", "");
         Bukkit.getAsyncScheduler().runNow(CiklesMC.getInstance(), r -> {
             if (Config.discordWebhookUrl() == null) {
                 sendOverBot(name, msg, avatarUrl);
@@ -92,7 +92,7 @@ public class DiscordBot {
 
             Request.Builder bu = new Request.Builder();
             JsonObject json = new JsonObject();
-            json.add("content", new JsonPrimitive(msg.replaceAll("§[0-9a-f]", "")));
+            json.add("content", new JsonPrimitive(msg));
             if (avatarUrl != null) json.add("avatar_url", new JsonPrimitive(avatarUrl));
             json.add("username", new JsonPrimitive(name));
             bu.url(Config.discordWebhookUrl());
@@ -102,9 +102,9 @@ public class DiscordBot {
             try (Response res = call.execute()) {
                 ResponseBody body = res.body();
                 if (res.code() >= 300) {
-                    String message = "";
-                    if (body != null) message = body.string();
-                    throw new IOException("Response Code " + res.code() + " " + message);
+                    if (body != null)
+                        throw new IOException("Response Code " + res.code() + " " + body.string());
+                    throw new IOException("Response Code " + res.code());
                 }
             } catch (IOException e) {
                 CiklesMC.getInstance().getSLF4JLogger().warn("Failed to post webhook on discord: {}", e.getLocalizedMessage(), e);
@@ -129,9 +129,7 @@ public class DiscordBot {
 
     public static @NotNull Role getHighestRoleOfDiscordMember(@Nullable Member member) {
         if (member == null) return Config.getGuild().getPublicRole();
-        return member.getRoles().stream()
-                // Filter Category Roles
-                .filter(role -> List.of(965277315200335902L, 680882314452271132L, 871031161814646784L, 903305033804824576L, 680882503304871949L, 903336872279937064L).contains(role.getIdLong()))
+        return member.getRoles().stream().filter(role -> !role.isPublicRole())
                 // Filter Coloring -> No default colors
                 .filter(role -> role.getColorRaw() != 0x000000 && role.getColorRaw() != 0x99AAB5).min((x, y) -> Integer.compare(y.getPosition(), x.getPosition())).orElse(member.getGuild().getPublicRole());
     }

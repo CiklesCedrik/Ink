@@ -51,14 +51,13 @@ public class TreeChopper extends Enchantments.CiklesEnchant {
         if (!isLog(event.getBlock())) return;
         Bukkit.getAsyncScheduler().runNow(CiklesMC.getInstance(), t -> {
             if (mainHand.getItemMeta() != null && mainHand.getItemMeta().hasEnchant(Enchantments.TREE_CHOPPER.getEnchantment())) {
-                event.setDropItems(false);
                 AtomicInteger delay = new AtomicInteger(1);
                 List<Block> logs = getNearbyLogs(event.getBlock().getLocation());
                 TO_BREAK.addAll(logs);
                 for (Block b : logs) {
                     float speed = b.getBreakSpeed(target);
                     Bukkit.getRegionScheduler().runDelayed(CiklesMC.getInstance(), b.getLocation(), task ->
-                            target.breakBlock(b), Math.clamp(Math.round(1F / speed * delay.getAndIncrement()), 1, 10));
+                            target.breakBlock(b), Math.clamp(Math.round(1F / speed), 1L, 10L) * delay.getAndIncrement());
                 }
             }
         });

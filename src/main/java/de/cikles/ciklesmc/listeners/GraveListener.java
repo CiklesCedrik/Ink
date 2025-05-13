@@ -50,16 +50,14 @@ public class GraveListener implements Listener {
     private static final NamespacedKey POSITION_KEY = NamespacedKey.fromString("pos", CiklesMC.getInstance());
     private static final NamespacedKey EXP_KEY = NamespacedKey.fromString("xp", CiklesMC.getInstance());
 
-    private static boolean isInBounds(int x, int y, int z, int radius, int worldY, int minHeight, int maxHeight) {
-        return x * x + y * y + z * z <= radius * radius && worldY >= minHeight && worldY <= maxHeight;
+    private static boolean isInBounds(int x, int y, int z, int radius) {
+        return x * x + y * y + z * z <= radius * radius;
     }
 
-    public static Location getGraveLocation(Location location, int radius) {
+    public static Location getGraveLocation(Location original, int radius) {
         Set<String> visited = new HashSet<>();
         Queue<int[]> queue = new LinkedList<>();
-
-        if (location.getWorld().getHighestBlockAt(location.blockX(), location.blockZ()).getY() - location.blockY() <= radius)
-            return new Location(location.getWorld(), location.blockX(), location.getWorld().getHighestBlockAt(location.blockX(), location.blockZ()).getY() + 1D, location.blockZ());
+        Location initial = createInitial(original, radius);
 
         queue.add(new int[]{0, 0, 0});
         visited.add("0,0,0");
@@ -70,13 +68,13 @@ public class GraveListener implements Listener {
             int y = current[1];
             int z = current[2];
 
-            int worldX = location.blockX() + x;
-            int worldY = location.blockY() + y;
-            int worldZ = location.blockZ() + z;
+            int worldX = initial.blockX() + x;
+            int worldY = initial.blockY() + y;
+            int worldZ = initial.blockZ() + z;
 
-            if (isInBounds(x, y, z, radius, worldY, location.getWorld().getMinHeight(), location.getWorld().getMaxHeight())) {
-                Location target = new Location(location.getWorld(), worldX, worldY, worldZ);
-                if (!target.getBlock().isLiquid() && target.getBlock().isEmpty()) return target;
+            if (isInBounds(x, y, z, radius)) {
+                Location target = new Location(initial.getWorld(), worldX, worldY, worldZ);
+                if (target.getBlock().isEmpty()) return target;
 
                 int[][] directions = {{0, 1, 0}, {0, -1, 0}, {1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}};
 
@@ -94,6 +92,23 @@ public class GraveListener implements Listener {
             }
         }
         return null;
+    }
+
+    // Sets the middle of the search sphere, away from the minimum and maximum build height
+    // also returns first empty block on Y-axis if it's not more than 3 Block away.
+    private static Location createInitial(Location location, int radius) {
+        World world = location.getWorld();
+        // Checking Y-Axis for free Block in a 3 Block distance
+        int highestBlock = location.getWorld().getHighestBlockAt(location.blockX(), location.blockZ()).getY() + 1;
+        if (highestBlock - location.blockY() <= 3 && highestBlock < world.getMaxHeight())
+            return new Location(location.getWorld(), location.blockX(), highestBlock, location.blockZ());
+        // Checking for maximum centre height
+        if (location.blockY() + radius / 2 > location.getWorld().getMaxHeight())
+            return new Location(world, location.getX(), world.getMaxHeight() - radius / 2D - 2, location.getZ());
+        // Checking for minimum centre height
+        if (location.blockY() - radius / 2 > location.getWorld().getMinHeight())
+            return new Location(world, location.getX(), world.getMinHeight() + radius / 2D + 2, location.getZ());
+        return location;
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -120,14 +135,14 @@ public class GraveListener implements Listener {
         // Clear Drops and Exp
         event.getDrops().clear();
         event.setShouldDropExperience(true);
-        event.setDroppedExp(Math.round(xp * 0.3f));
+        event.setDroppedExp(Math.round(xp * 0.5f));
         // Loading other graves of Player
         ArrayList<PersistentDataContainer> graves = new ArrayList<>(DataUtil.getSubArrayContainer(container, GRAVE_KEY));
 
         // Save Inventory and Exp into a new container.
         PersistentDataContainer deathPoint = player.getPersistentDataContainer().getAdapterContext().newPersistentDataContainer();
         DataUtil.set(deathPoint, POSITION_KEY, new int[]{loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()}, PersistentDataType.INTEGER_ARRAY);
-        DataUtil.set(deathPoint, EXP_KEY, Math.round(xp * 0.6f), PersistentDataType.INTEGER);
+        DataUtil.set(deathPoint, EXP_KEY, Math.round(xp * 0.2f), PersistentDataType.INTEGER);
         DataUtil.set(deathPoint, INVENTORY_CONTENTS_KEY, INVENTORY_CONTENTS.toPrimitive(Arrays.stream(inventory.getContents()).map(it -> it == null ? ItemStack.empty() : it).toList(), player.getPersistentDataContainer().getAdapterContext()), PersistentDataType.LIST.dataContainers());
         DataUtil.set(deathPoint, OWNER_KEY, UUID.toPrimitive(player.getUniqueId(), deathPoint.getAdapterContext()), PersistentDataType.LONG_ARRAY);
 

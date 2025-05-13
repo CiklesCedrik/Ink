@@ -118,6 +118,7 @@ public class Shop extends LiteralArgumentBuilder<CommandSourceStack> implements 
         getEnchantments(meta, enchantments);
         getEnchantments(firstMeta, enchantments);
         getEnchantments(secondMeta, enchantments);
+        event.getView().setMaximumRepairCost(70);
         if (meta instanceof EnchantmentStorageMeta enchantmentStorageMeta)
             enchantments.forEach((enchantment, level) -> enchantmentStorageMeta.addStoredEnchant(enchantment, level, true));
         else enchantments.forEach((enchantment, level) -> meta.addEnchant(enchantment, level, true));
@@ -193,7 +194,7 @@ public class Shop extends LiteralArgumentBuilder<CommandSourceStack> implements 
             meta.addStoredEnchant(enchantment, i, true);
             item.setItemMeta(meta);
 
-            MerchantRecipe book = new MerchantRecipe(item, 50);
+            MerchantRecipe book = new MerchantRecipe(item, 9999);
             book.addIngredient(new ItemStack(Material.EMERALD, Math.min(64, 2 + 7 * i * (TREASURE_ENCHANTMENTS.contains(enchantment) ? 2 : 1))));
             book.addIngredient(new ItemStack(Material.BOOK, 1));
             trades.add(book);

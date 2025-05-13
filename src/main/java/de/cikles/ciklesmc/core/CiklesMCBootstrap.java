@@ -66,17 +66,15 @@ public class CiklesMCBootstrap implements PluginBootstrap, PluginLoader {
         manager.registerEventHandler(RegistryEvents.ENCHANTMENT.freeze().newHandler(event -> List.of(Enchantments.values()).forEach(enchantments -> event.registry().register(enchantments.enchantmentTypedKey, c -> enchantments.ciklesEnchant.register(event, c)))));
         manager.registerEventHandler(LifecycleEvents.TAGS.postFlatten(RegistryKey.ENCHANTMENT), event -> event.registrar().addToTag(EnchantmentTagKeys.create(key("ciklesmc:enchantment")), Stream.of(Enchantments.values()).map(e -> e.enchantmentTypedKey).toList()));
 
-
-        manager.registerEventHandler(LifecycleEvents.COMMANDS, this::registerCommands);
     }
 
-    private void registerCommands(ReloadableRegistrarEvent<Commands> registrar) {
-        Commands registrarEvent = registrar.registrar();
-        registrarEvent.register(SIT);
-        registrarEvent.register(HOME);
-        registrarEvent.register(SET_HOME);
-        registrarEvent.register(REMOVE_HOME);
-        registrarEvent.register(SHOP);
+    static void registerCommands(ReloadableRegistrarEvent<Commands> registrar) {
+        Commands commands = registrar.registrar();
+        commands.register(SIT);
+        commands.register(HOME);
+        commands.register(SET_HOME);
+        commands.register(REMOVE_HOME);
+        commands.register(SHOP);
     }
 
     @Override

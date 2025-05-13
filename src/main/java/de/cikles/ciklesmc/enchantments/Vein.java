@@ -6,7 +6,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.data.EnchantmentRegistryEntry;
 import io.papermc.paper.registry.event.RegistryFreezeEvent;
-import io.papermc.paper.registry.keys.BlockTypeKeys;
 import io.papermc.paper.registry.keys.tags.BlockTypeTagKeys;
 import io.papermc.paper.registry.keys.tags.ItemTypeTagKeys;
 import io.papermc.paper.registry.tag.TagKey;
@@ -77,10 +76,6 @@ public class Vein extends Enchantments.CiklesEnchant {
         return BLOCK_REGISTRY.getTag(BlockTypeTagKeys.LAPIS_ORES).values().stream().map(TypedKey::key).toList().contains(block.key());
     }
 
-    public static boolean isQuartz(@NotNull BlockType block) {
-        return block.equals(BlockTypeKeys.NETHER_QUARTZ_ORE);
-    }
-
     public static boolean isOre(@NotNull BlockType block) {
         return BLOCK_REGISTRY.getTag(ORES).values().stream().map(TypedKey::key).toList().contains(block.key());
     }
@@ -100,14 +95,13 @@ public class Vein extends Enchantments.CiklesEnchant {
         TagKey<BlockType> tag = getTagKey(Objects.requireNonNull(type));
         Bukkit.getAsyncScheduler().runNow(CiklesMC.getInstance(), t -> {
             if (mainHand.getItemMeta() != null && mainHand.getItemMeta().hasEnchant(Enchantments.VEIN.getEnchantment())) {
-                event.setDropItems(false);
                 AtomicInteger delay = new AtomicInteger(1);
-                List<Block> logs = getNearbyOres(event.getBlock().getLocation(), tag, type);
-                TO_BREAK.addAll(logs);
-                for (Block b : logs) {
+                List<Block> ores = getNearbyOres(event.getBlock().getLocation(), tag, type);
+                TO_BREAK.addAll(ores);
+                for (Block b : ores) {
                     float speed = b.getBreakSpeed(target);
                     Bukkit.getRegionScheduler().runDelayed(CiklesMC.getInstance(), b.getLocation(), task ->
-                            target.breakBlock(b), Math.clamp(Math.round(1F / speed * delay.getAndIncrement()), 1, 10));
+                            target.breakBlock(b), Math.clamp(Math.round(1F / speed), 1L, 10L) * delay.getAndIncrement());
                 }
             }
         });

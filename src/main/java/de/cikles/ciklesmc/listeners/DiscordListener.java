@@ -1,6 +1,5 @@
 package de.cikles.ciklesmc.listeners;
 
-import de.cikles.ciklesmc.utility.MinecraftUtil;
 import de.cikles.discord.DiscordBot;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
@@ -32,7 +31,7 @@ public class DiscordListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerChat(AsyncChatEvent event) {
-        DiscordBot.sendPlayerMessage(MinecraftUtil.getPlayerName(event.getPlayer().getUniqueId()), LegacyComponentSerializer.legacySection().serialize(event.message()));
+        DiscordBot.sendPlayerMessage(event.getPlayer().getName(), LegacyComponentSerializer.legacySection().serialize(event.message()));
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

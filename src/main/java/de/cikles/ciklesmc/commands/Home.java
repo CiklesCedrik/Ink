@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import static de.cikles.ciklesmc.utility.Config.Translations.*;
 
 public class Home {
+    public static final long TIMEOUT = 36000;
     public static final LiteralArgumentBuilder<CommandSourceStack> HOMES = new Home.Homes();
     public static final LiteralArgumentBuilder<CommandSourceStack> SET_HOME = new Home.SetHome();
     public static final LiteralArgumentBuilder<CommandSourceStack> REMOVE_HOME = new Home.RemoveHome();
@@ -51,7 +52,9 @@ public class Home {
         Entity entity = context.getSource().getExecutor();
         DataUtil.getSubArrayContainer(entity, HOME_KEY).stream().forEach(home -> {
             int[] position = DataUtil.get(home, POSITION_KEY, PersistentDataType.INTEGER_ARRAY);
-            builder.suggest(DataUtil.get(home, NAME_KEY, PersistentDataType.STRING), MessageComponentSerializer.message().serialize(Component.text("X:" + position[0] + " Y:" + position[1] + " Z:" + position[2])));
+            String name = DataUtil.get(home, NAME_KEY, PersistentDataType.STRING);
+            if (builder.getRemainingLowerCase().isBlank() || name.startsWith(builder.getRemainingLowerCase()))
+                builder.suggest(name, MessageComponentSerializer.message().serialize(Component.text("X:" + position[0] + " Y:" + position[1] + " Z:" + position[2], NamedTextColor.GRAY)));
         });
         return builder.buildFuture();
     }
@@ -104,8 +107,8 @@ public class Home {
             PersistentDataContainer home = homeOptional.get();
             int[] loc = DataUtil.get(home, POSITION_KEY, PersistentDataType.INTEGER_ARRAY);
             World world = Bukkit.getWorld(DataUtil.get(home, WORLD_KEY, DataUtil.UUID));
-            long lastTP = DataUtil.getOrDefault(entity, LAST_TP, world.getGameTime() - 18000, PersistentDataType.LONG);
-            if (world.getGameTime() - lastTP < 18000) {
+            long lastTP = DataUtil.getOrDefault(entity, LAST_TP, world.getGameTime() - TIMEOUT, PersistentDataType.LONG);
+            if (world.getGameTime() - lastTP < TIMEOUT) {
                 entity.sendMessage(Component.translatable(WAIT_BEFORE_TELEPORTING, NamedTextColor.RED, Component.text(15 - Math.round((world.getGameTime() - lastTP) / 1200D), NamedTextColor.YELLOW)));
                 return SINGLE_SUCCESS;
             }

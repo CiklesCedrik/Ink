@@ -1,4 +1,4 @@
-# Fields with ** must be set! (If its enabled)
+# Fields with ** must be set! (If the category is enabled)
 
 # Sends messages from Minecraft to Discord and vice versa
 discord:
@@ -20,15 +20,13 @@ messages:
   chat: "%source%: &7%message%"
 
 enchantments:
+  # WARNING: Only disables the events, not the enchantment. They will be still listed in /enchant
   enabled: false
   # Don't drop items they are transferred into the Inventory of the player who broke the Block.
   telekinesis: true
   tree_chopper: true
   vein: true
   oracle: true
-
-professions:
-  enabled: false
 
 mob-griefing:
   # Disables block damage by Creeper Explosions

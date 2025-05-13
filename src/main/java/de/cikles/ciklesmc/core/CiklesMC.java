@@ -4,6 +4,7 @@ import de.cikles.ciklesmc.commands.shop.Shop;
 import de.cikles.ciklesmc.listeners.*;
 import de.cikles.ciklesmc.utility.Config;
 import de.cikles.discord.DiscordBot;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.translation.GlobalTranslator;
 import net.kyori.adventure.translation.TranslationRegistry;
@@ -28,10 +29,10 @@ public class CiklesMC extends JavaPlugin {
     public void onEnable() {
         try {
 
-            // register Event Listeners
+
             registerTranslations();
             registerListeners();
-
+            this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, CiklesMCBootstrap::registerCommands);
             // register pluginChannels for mod implementations
             getServer().getMessenger().registerOutgoingPluginChannel(this, XaeroImplementation.XAEROWORLDMAP);
             getServer().getMessenger().registerOutgoingPluginChannel(this, XaeroImplementation.XAEROMINIMAP);
