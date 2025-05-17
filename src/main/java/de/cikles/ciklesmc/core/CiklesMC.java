@@ -1,5 +1,6 @@
 package de.cikles.ciklesmc.core;
 
+import de.cikles.ciklesmc.commands.Home;
 import de.cikles.ciklesmc.commands.shop.Shop;
 import de.cikles.ciklesmc.listeners.*;
 import de.cikles.ciklesmc.utility.Config;
@@ -20,7 +21,7 @@ import java.util.Objects;
 
 public class CiklesMC extends JavaPlugin {
 
-    public static final TranslationRegistry translationRegistry = TranslationRegistry.create(Key.key("cikles", "translation"));
+    public static final TranslationRegistry translationRegistry = TranslationRegistry.create(Key.key("lang", "ciklesmc"));
 
     public static CiklesMC getInstance() {
         return (CiklesMC) getProvidingPlugin(CiklesMC.class);
@@ -41,7 +42,7 @@ public class CiklesMC extends JavaPlugin {
             if (Config.discord()) DiscordBot.start();
 
         } catch (Exception e) {
-            getSLF4JLogger().error("Can't enable CiklesMC! {}", e.getLocalizedMessage(), e);
+            getSLF4JLogger().error("Can't enable {}! {}", this.getName(), e.getLocalizedMessage(), e);
             getServer().getPluginManager().disablePlugin(this);
         }
     }
@@ -65,7 +66,10 @@ public class CiklesMC extends JavaPlugin {
         pluginManager.registerEvents(new MobGriefingListener(), this);
         pluginManager.registerEvents(new MessageListeners(), this);
         pluginManager.registerEvents(new XaeroImplementation(), this);
-        pluginManager.registerEvents(new Shop(), this);
+        if (Config.isHomeEnabled())
+            pluginManager.registerEvents(new Home(), this);
+        if (Config.isShopEnabled())
+            pluginManager.registerEvents(new Shop(), this);
     }
 
     private void registerTranslations() {

@@ -1,19 +1,17 @@
 package de.cikles.ciklesmc.commands.shop;
 
-import de.cikles.ciklesmc.core.CiklesMC;
+import de.cikles.ciklesmc.enchantments.Enchantments;
+import de.cikles.ciklesmc.utility.Config;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Villager;
-import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
@@ -21,11 +19,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import static de.cikles.ciklesmc.commands.shop.Shop.createItemStack;
-import static de.cikles.ciklesmc.utility.Config.Translations.SHOP_ENCHANTMENT;
-import static de.cikles.ciklesmc.utility.Config.Translations.SHOP_TITLE_VILLAGER_TRADES;
+import static de.cikles.ciklesmc.utility.Config.Translations.*;
 
 public enum ShopCategory {
     MAIN(Component.translatable(SHOP_TITLE_VILLAGER_TRADES),
@@ -42,8 +38,9 @@ public enum ShopCategory {
                     , createItemStack(Material.LECTERN, Component.translatable(Villager.Profession.LIBRARIAN.translationKey(), Style.style().decoration(TextDecoration.ITALIC, false).build()), false)
                     , createItemStack(Material.STONECUTTER, Component.translatable(Villager.Profession.MASON.translationKey(), Style.style().decoration(TextDecoration.ITALIC, false).build()), false)
                     , createItemStack(Material.LOOM, Component.translatable(Villager.Profession.SHEPHERD.translationKey(), Style.style().decoration(TextDecoration.ITALIC, false).build()), false)
-                    , createItemStack(Material.ENDER_CHEST, Component.text("=?", NamedTextColor.GOLD), false)
-                    , createItemStack(Material.ENCHANTED_BOOK, Component.translatable(Material.ENCHANTED_BOOK.translationKey(), Style.style().decoration(TextDecoration.ITALIC, false).build()), false))),
+                    , createItemStack(Material.NETHER_STAR, Component.text("⭐", Style.style().color(NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false).build()), false)
+                    , createItemStack(Material.ENCHANTED_BOOK, Component.translatable(Material.ENCHANTED_BOOK.translationKey(), Style.style().decoration(TextDecoration.ITALIC, false).build()), false)
+                    , createItemStack(Material.NETHERITE_SCRAP, Component.text("📖", Style.style().color(TextColor.color(0xC24492)).decoration(TextDecoration.ITALIC, false).build()), false))),
     SMITH(Component.translatable(Villager.Profession.ARMORER.translationKey()), smith()),
     BUTCHER(Component.translatable(Villager.Profession.BUTCHER.translationKey()), butcher()),
     CARTOGRAPHER(Component.translatable(Villager.Profession.CARTOGRAPHER.translationKey()), cartographer()),
@@ -55,8 +52,9 @@ public enum ShopCategory {
     LIBRARIAN(Component.translatable(Villager.Profession.LIBRARIAN.translationKey()), librarian()),
     MASON(Component.translatable(Villager.Profession.MASON.translationKey()), mason()),
     SHEPHERD(Component.translatable(Villager.Profession.SHEPHERD.translationKey()), shepherd()),
-    CUSTOM(Component.text("=?", NamedTextColor.GOLD), custom()),
-    ENCHANTMENTS(Component.translatable(SHOP_ENCHANTMENT), enchantments());
+    CUSTOM(Component.translatable(SHOP_SPECIAL), custom()),
+    ENCHANTMENTS(Component.translatable(SHOP_ENCHANTMENT), enchantments()),
+    ANCIENT_TOMES(Component.translatable(SHOP_ANCIENT_TOME), ancientTomes());
 
     final Component title;
     final int pages;
@@ -67,6 +65,7 @@ public enum ShopCategory {
         this.pages = (buy.size() / 21F) % 1f > 0 ? (buy.size() / 21) + 1 : buy.size() / 21;
         this.title = title;
     }
+
 
     public static ShopCategory fromTranslationKey(String category) {
         if (category.equals(Villager.Profession.ARMORER.translationKey()))
@@ -91,8 +90,12 @@ public enum ShopCategory {
             return MASON;
         else if (category.equals(Villager.Profession.SHEPHERD.translationKey()))
             return SHEPHERD;
+        else if (category.equals(SHOP_SPECIAL))
+            return CUSTOM;
         else if (category.equals(SHOP_ENCHANTMENT))
             return ENCHANTMENTS;
+        else if (category.equals(SHOP_ANCIENT_TOME))
+            return ANCIENT_TOMES;
         else return MAIN;
     }
 
@@ -121,6 +124,16 @@ public enum ShopCategory {
         trades.add(diamond);
 
         // Sell
+        trades.add(withDefaultEnchantment(Material.DIAMOND_HOE, 14, Enchantment.UNBREAKING));
+        trades.add(withDefaultEnchantment(Material.DIAMOND_AXE, 17, Enchantment.UNBREAKING));
+        trades.add(withDefaultEnchantment(Material.DIAMOND_SHOVEL, 10, Enchantment.UNBREAKING));
+        trades.add(withDefaultEnchantment(Material.DIAMOND_PICKAXE, 18, Enchantment.UNBREAKING, Enchantment.EFFICIENCY));
+        trades.add(withDefaultEnchantment(Material.DIAMOND_SWORD, 13, Enchantment.UNBREAKING, Enchantment.LOOTING));
+        trades.add(withDefaultEnchantment(Material.DIAMOND_HELMET, 13, Enchantment.UNBREAKING, Enchantment.AQUA_AFFINITY));
+        trades.add(withDefaultEnchantment(Material.DIAMOND_CHESTPLATE, 21, Enchantment.UNBREAKING));
+        trades.add(withDefaultEnchantment(Material.DIAMOND_LEGGINGS, 19, Enchantment.UNBREAKING));
+        trades.add(withDefaultEnchantment(Material.DIAMOND_BOOTS, 13, Enchantment.UNBREAKING, Enchantment.FEATHER_FALLING));
+
         MerchantRecipe shield = new MerchantRecipe(new ItemStack(Material.SHIELD, 1), 9999);
         shield.addIngredient(emerald(5));
         trades.add(shield);
@@ -131,6 +144,60 @@ public enum ShopCategory {
 
         return trades;
     }
+
+    private static List<MerchantRecipe> custom() {
+        List<MerchantRecipe> trades = new ArrayList<>();
+
+        // Buy
+        MerchantRecipe copper = new MerchantRecipe(emerald(2), 9999);
+        copper.addIngredient(new ItemStack(Material.COPPER_BLOCK, 1));
+        trades.add(copper);
+
+        // Sell
+
+        MerchantRecipe slime = new MerchantRecipe(new ItemStack(Material.SLIME_BALL, 3), 9999);
+        slime.addIngredient(new ItemStack(Material.HONEY_BLOCK, 1));
+        trades.add(slime);
+
+        return trades;
+    }
+
+    private static List<ItemStack> enchantments() {
+        List<ItemStack> enchantments = new ArrayList<>();
+        List<Enchantment> ciklesEnchantments = Config.enabledEnchantments().stream().map(Enchantments::getEnchantment).toList();
+        RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).stream().filter(e -> (Config.enchantments() && e.getKey().namespace().equalsIgnoreCase("ciklesmc") && ciklesEnchantments.contains(e)) || (e.isTradeable() && !e.isCursed())).forEach(e -> {
+            ItemStack item = new ItemStack(Material.ENCHANTED_BOOK, 1);
+            EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
+            meta.addStoredEnchant(e, e.getMaxLevel(), true);
+            meta.setMaxStackSize(e.getMaxLevel());
+            item.setItemMeta(meta);
+            item.setAmount(e.getMaxLevel());
+            enchantments.add(item);
+        });
+        return enchantments;
+    }
+
+    private static List<MerchantRecipe> ancientTomes() {
+        List<MerchantRecipe> trades = new ArrayList<>();
+        Config.getAncientTomes().stream().map(ShopCategory::upgradeEnchantment).forEach(trades::add);
+        return trades;
+    }
+
+    private static MerchantRecipe upgradeEnchantment(Enchantment enchantment) {
+        ItemStack netheriteScrap = Material.NETHERITE_SCRAP.asItemType().createItemStack();
+        ItemStack result = Material.NETHERITE_SCRAP.asItemType().createItemStack();
+        ItemMeta resultMeta = result.getItemMeta();
+        resultMeta.customName(Component.text("Ancient Tome", TextColor.color(0xC24492)));
+        resultMeta.addEnchant(enchantment, 1, true);
+        result.setItemMeta(resultMeta);
+
+
+        MerchantRecipe recipe = new MerchantRecipe(result, 9999);
+        recipe.addIngredient(emerald(enchantment.getMaxLevel() * 2 + 3));
+        recipe.addIngredient(netheriteScrap);
+        return recipe;
+    }
+
 
     private static List<MerchantRecipe> butcher() {
         List<MerchantRecipe> trades = new ArrayList<>();
@@ -591,80 +658,24 @@ public enum ShopCategory {
         return trades;
     }
 
-    private static List<MerchantRecipe> custom() {
-        List<MerchantRecipe> trades = new ArrayList<>();
+    private static MerchantRecipe withDefaultEnchantment(Material material, int baseCost, Enchantment... enchantments) {
+        ItemStack item = material.asItemType().createItemStack();
+        ItemMeta meta = item.getItemMeta();
+        int level = -3;
+        for (Enchantment enchantment : enchantments) {
+            meta.addEnchant(enchantment, enchantment.getMaxLevel(), true);
+            level += enchantment.getMaxLevel();
+        }
+        item.setItemMeta(meta);
 
-        // Buy
-        MerchantRecipe copper = new MerchantRecipe(emerald(2), 9999);
-        copper.addIngredient(new ItemStack(Material.COPPER_BLOCK, 1));
-        trades.add(copper);
-
-        // Sell
-
-        MerchantRecipe slime = new MerchantRecipe(new ItemStack(Material.SLIME_BALL, 2), 9999);
-        slime.addIngredient(new ItemStack(Material.HONEY_BLOCK, 1));
-        trades.add(slime);
-
-        trades.add(upgradeEnchantment(Enchantment.SHARPNESS));
-        trades.add(upgradeEnchantment(Enchantment.SWEEPING_EDGE));
-        trades.add(upgradeEnchantment(Enchantment.LOOTING));
-        trades.add(upgradeEnchantment(Enchantment.FORTUNE));
-        trades.add(upgradeEnchantment(Enchantment.UNBREAKING));
-
-        trades.add(upgradeEnchantment(Enchantment.PROTECTION));
-        trades.add(upgradeEnchantment(Enchantment.RESPIRATION));
-        trades.add(upgradeEnchantment(Enchantment.FEATHER_FALLING));
-        trades.add(upgradeEnchantment(Enchantment.DEPTH_STRIDER));
-        trades.add(upgradeEnchantment(Enchantment.SWIFT_SNEAK));
-
-        ItemStack elytraItem = Material.ELYTRA.asItemType().createItemStack();
-        ItemMeta meta = elytraItem.getItemMeta();
-        meta.addEnchant(Enchantment.PROTECTION, 5, true);
-        meta.addAttributeModifier(Attribute.ARMOR, new AttributeModifier(Objects.requireNonNull(NamespacedKey.fromString("armor", CiklesMC.getInstance())), 8, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.CHEST));
-        meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, new AttributeModifier(Objects.requireNonNull(NamespacedKey.fromString("armor_toughness", CiklesMC.getInstance())), 3, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.CHEST));
-        meta.addAttributeModifier(Attribute.KNOCKBACK_RESISTANCE, new AttributeModifier(Objects.requireNonNull(NamespacedKey.fromString("knockback_resistance", CiklesMC.getInstance())), 1, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.CHEST));
-        elytraItem.setItemMeta(meta);
-
-        MerchantRecipe elytra = new MerchantRecipe(elytraItem, 9999);
-        elytra.addIngredient(Material.NETHERITE_INGOT.asItemType().createItemStack(2));
-        elytra.addIngredient(new ItemStack(Material.ELYTRA));
-        trades.add(elytra);
-
-        return trades;
+        MerchantRecipe trade = new MerchantRecipe(item, 9999);
+        trade.addIngredient(emerald(Math.clamp(baseCost + level * 2L, baseCost, 35)));
+        return trade;
     }
 
-    private static MerchantRecipe upgradeEnchantment(Enchantment enchantment) {
-        ItemStack book = Material.ENCHANTED_BOOK.asItemType().createItemStack();
-        EnchantmentStorageMeta bookMeta = (EnchantmentStorageMeta) book.getItemMeta();
-        bookMeta.addStoredEnchant(enchantment, enchantment.getMaxLevel(), true);
-        book.setItemMeta(bookMeta);
-        ItemStack result = Material.ENCHANTED_BOOK.asItemType().createItemStack();
-        EnchantmentStorageMeta resultMeta = (EnchantmentStorageMeta) book.getItemMeta();
-        resultMeta.addStoredEnchant(enchantment, enchantment.getMaxLevel() + 1, true);
-        result.setItemMeta(resultMeta);
-
-        MerchantRecipe recipe = new MerchantRecipe(result, 9999);
-        recipe.addIngredient(emerald(12));
-        recipe.addIngredient(book);
-        return recipe;
-    }
 
     private static ItemStack emerald(int amount) {
         return new ItemStack(Material.EMERALD, amount);
-    }
-
-    private static List<ItemStack> enchantments() {
-        List<ItemStack> enchantments = new ArrayList<>();
-        RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).stream().filter(e -> e.getKey().namespace().equalsIgnoreCase("ciklesmc") || (e.isTradeable() && !e.isCursed())).forEach(e -> {
-            ItemStack item = new ItemStack(Material.ENCHANTED_BOOK, 1);
-            EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
-            meta.addStoredEnchant(e, 1, true);
-            meta.setMaxStackSize(e.getMaxLevel());
-            item.setItemMeta(meta);
-            item.setAmount(e.getMaxLevel());
-            enchantments.add(item);
-        });
-        return enchantments;
     }
 
     @SuppressWarnings("unchecked")
@@ -688,6 +699,5 @@ public enum ShopCategory {
     public boolean isMerchant() {
         return !buy.isEmpty() && buy.get(0) instanceof MerchantRecipe;
     }
-
 
 }

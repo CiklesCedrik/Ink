@@ -10,14 +10,43 @@ discord:
   # If available messages get send over the defined webhook
   webhook-url: "https://discord.com/api/webhooks/id/token"
   # Messages from the Server will have this image (Player Join, Quit, Advancement, Death)
-  server-image: "https://www.freeiconspng.com//uploads/minecraft-server-icon-4.png"
+  server-image: "https://cikles.de/minecraft/plugins/Ink/discord_rcp_server.png"
 
 messages:
   player-join: "&a[+] &r%player%"
   player-quit: "&c[-] &r%player%"
   # REQUIRED for discord-chat synchronisation
-  # %sourceDisplayName% (prefix suffix) or %source% (for player the default name)
+  # %sourceDisplayName% or %source%
   chat: "%source%: &7%message%"
+
+home:
+  enabled: false
+  # Time to teleport (in seconds)
+  timeout: 10
+  # Time between teleports (in minutes)
+  cooldown: 30
+  # How many Homes per player
+  amount: 10
+
+shop:
+  enabled: false
+  ancient-tomes: [
+    minecraft:feather_falling,
+    minecraft:thorns,
+    minecraft:sharpness,
+    minecraft:smite,
+    minecraft:bane_of_arthropods,
+    minecraft:knockback,
+    minecraft:fire_aspect,
+    minecraft:looting,
+    minecraft:sweeping_edge,
+    minecraft:efficiency,
+    minecraft:unbreaking,
+    minecraft:fortune,
+    minecraft:power,
+    minecraft:punch,
+    minecraft:luck_of_the_sea,
+    minecraft:lure ]
 
 enchantments:
   # WARNING: Only disables the events, not the enchantment. They will be still listed in /enchant
@@ -28,8 +57,8 @@ enchantments:
   vein: true
   oracle: true
 
-mob-griefing:
-  # Disables block damage by Creeper Explosions
+mob-griefing: # Set to disable if you want to prevent/disable the damage
+  # Damage by Creeper Explosions
   creeper-explosions: true
   # Fire charges wich are shoot by a Ghast
   ghast-explosions: true

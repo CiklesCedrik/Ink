@@ -24,6 +24,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -94,17 +95,24 @@ public class Vein extends Enchantments.CiklesEnchant {
         if (!isOre(type)) return;
         TagKey<BlockType> tag = getTagKey(Objects.requireNonNull(type));
         Bukkit.getAsyncScheduler().runNow(CiklesMC.getInstance(), t -> {
-            if (mainHand.getItemMeta() != null && mainHand.getItemMeta().hasEnchant(Enchantments.VEIN.getEnchantment())) {
+            if (checkForEnchantment(mainHand.getItemMeta())) {
                 AtomicInteger delay = new AtomicInteger(1);
                 List<Block> ores = getNearbyOres(event.getBlock().getLocation(), tag, type);
                 TO_BREAK.addAll(ores);
                 for (Block b : ores) {
                     float speed = b.getBreakSpeed(target);
-                    Bukkit.getRegionScheduler().runDelayed(CiklesMC.getInstance(), b.getLocation(), task ->
-                            target.breakBlock(b), Math.clamp(Math.round(1F / speed), 1L, 10L) * delay.getAndIncrement());
+                    Bukkit.getRegionScheduler().runDelayed(CiklesMC.getInstance(), b.getLocation(), task -> {
+                        if (checkForEnchantment(mainHand.getItemMeta()))
+                            return;
+                        target.breakBlock(b);
+                    }, Math.clamp(Math.round(1F / speed), 1L, 8L) * delay.getAndIncrement());
                 }
             }
         });
+    }
+
+    private boolean checkForEnchantment(ItemMeta meta) {
+        return !(meta == null || !meta.hasEnchant(Enchantments.VEIN.getEnchantment()));
     }
 
     public List<Block> getNearbyOres(@NotNull Location origin, @Nullable TagKey<BlockType> type, @NotNull BlockType broken) {

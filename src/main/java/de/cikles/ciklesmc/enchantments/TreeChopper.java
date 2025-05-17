@@ -22,6 +22,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,19 +51,25 @@ public class TreeChopper extends Enchantments.CiklesEnchant {
         ItemStack mainHand = target.getInventory().getItemInMainHand();
         if (!isLog(event.getBlock())) return;
         Bukkit.getAsyncScheduler().runNow(CiklesMC.getInstance(), t -> {
-            if (mainHand.getItemMeta() != null && mainHand.getItemMeta().hasEnchant(Enchantments.TREE_CHOPPER.getEnchantment())) {
+            if (checkForEnchantment(mainHand.getItemMeta())) {
                 AtomicInteger delay = new AtomicInteger(1);
                 List<Block> logs = getNearbyLogs(event.getBlock().getLocation());
                 TO_BREAK.addAll(logs);
                 for (Block b : logs) {
                     float speed = b.getBreakSpeed(target);
-                    Bukkit.getRegionScheduler().runDelayed(CiklesMC.getInstance(), b.getLocation(), task ->
-                            target.breakBlock(b), Math.clamp(Math.round(1F / speed), 1L, 10L) * delay.getAndIncrement());
+                    Bukkit.getRegionScheduler().runDelayed(CiklesMC.getInstance(), b.getLocation(), task -> {
+                        if (checkForEnchantment(mainHand.getItemMeta()))
+                            return;
+                        target.breakBlock(b);
+                    }, Math.clamp(Math.round(1F / speed), 1L, 8L) * delay.getAndIncrement());
                 }
             }
         });
     }
 
+    private boolean checkForEnchantment(ItemMeta meta) {
+        return !(meta == null || !meta.hasEnchant(Enchantments.TREE_CHOPPER.getEnchantment()));
+    }
     public List<Block> getNearbyLogs(Location origin) {
         Set<Block> visited = new HashSet<>();
         Queue<Block> toVisit = new LinkedList<>();
@@ -78,7 +85,7 @@ public class TreeChopper extends Enchantments.CiklesEnchant {
         while (!toVisit.isEmpty()) {
             Block current = toVisit.poll();
             logs.add(current);
-            if (logs.size() >= 32) return logs;
+            if (logs.size() >= 64) return logs;
 
             Location currentLoc = current.getLocation();
             if (Math.abs(currentLoc.getX() - origin.getX()) > 40 ||

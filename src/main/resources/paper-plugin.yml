@@ -6,6 +6,6 @@ api-version: '${apiVersion}'
 loader: de.cikles.ciklesmc.core.CiklesMCBootstrap
 bootstrapper: de.cikles.ciklesmc.core.CiklesMCBootstrap
 load: STARTUP
-folia-supported: false
+folia-supported: true
 authors: [ Cedrik B. ]
-website: https://cikles.de/minecraft/plugins/CiklesMC
+website: https://cikles.de/minecraft/plugins/Ink

@@ -1,5 +1,3 @@
-import xyz.jpenilla.runpaper.RunPaperExtension
-
 plugins {
     java
     idea
@@ -8,7 +6,7 @@ plugins {
 }
 
 group = "de.cikles"
-version = "1.3-ALPHA"
+version = "1.4-ALPHA"
 
 repositories {
     gradlePluginPortal()
@@ -32,16 +30,14 @@ dependencies {
         exclude(module = "opus-java")
     }
 }
-runPaper.folia.registerTask()
-runPaper.folia.pluginsMode.set(RunPaperExtension.Folia.PluginsMode.INHERIT_ALL)
 tasks {
+    runPaper.folia.registerTask()
     runServer {
         downloadPlugins {
             modrinth("viaversion", "5.3.2")
             modrinth("viabackwards", "5.3.2")
         }
         minecraftVersion("1.21.4")
-        jvmArgs("-Xlog:gc*:logs/gc.log:time,uptime:filecount=5,filesize=1M")
     }
 
     assemble {

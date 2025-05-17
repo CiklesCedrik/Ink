@@ -5,6 +5,7 @@ import de.cikles.ciklesmc.commands.Home;
 import de.cikles.ciklesmc.commands.Sit;
 import de.cikles.ciklesmc.commands.shop.Shop;
 import de.cikles.ciklesmc.enchantments.Enchantments;
+import de.cikles.ciklesmc.utility.Config;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
@@ -71,10 +72,13 @@ public class CiklesMCBootstrap implements PluginBootstrap, PluginLoader {
     static void registerCommands(ReloadableRegistrarEvent<Commands> registrar) {
         Commands commands = registrar.registrar();
         commands.register(SIT);
-        commands.register(HOME);
-        commands.register(SET_HOME);
-        commands.register(REMOVE_HOME);
-        commands.register(SHOP);
+        if (Config.isHomeEnabled()) {
+            commands.register(HOME);
+            commands.register(SET_HOME);
+            commands.register(REMOVE_HOME);
+        }
+        if (Config.isShopEnabled())
+            commands.register(SHOP);
     }
 
     @Override

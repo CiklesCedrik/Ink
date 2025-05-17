@@ -4,6 +4,8 @@ import de.cikles.ciklesmc.core.CiklesMC;
 import de.cikles.ciklesmc.enchantments.Enchantments;
 import de.cikles.discord.DiscordBot;
 import io.papermc.paper.chat.ChatRenderer;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.kyori.adventure.audience.Audience;
@@ -11,7 +13,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.PatternReplacementResult;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.translation.TranslationRegistry;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,18 +29,38 @@ import static de.cikles.ciklesmc.listeners.MessageListeners.transformComponent;
 
 @SuppressWarnings({"unused"})
 public class Config {
-    private static boolean discord;
+
+    // Discord
+    private static boolean discordRcpEnabled;
     private static @Nullable String token;
     private static long channel;
     private static @Nullable String webhookUrl;
     private static @Nullable String serverImage;
+
+    // Messages
     private static @Nullable Component playerJoin;
     private static @Nullable Component playerQuit;
     private static @Nullable Component chat;
-    private static boolean enchantments;
+
+    // Home
+    private static boolean homeEnabled;
+    private static int homeCooldown;
+    private static int homeTimeout;
+    private static int homePerPlayer;
+
+    // Shop
+    private static boolean shopEnabled;
+    private static List<String> ancientTomes;
+
+    // Enchantments
+    private static boolean enchantmentsEnabled;
+
+    // Mob griefing
     private static boolean creeperExplosions;
     private static boolean ghastExplosions;
     private static boolean enderman;
+
+    // Graves
     private static boolean graves;
     private static ChatRenderer renderer;
 
@@ -46,10 +70,10 @@ public class Config {
 
     private Config() {
     }
-
+// Discord
 
     public static boolean discord() {
-        return discord;
+        return discordRcpEnabled;
     }
 
     public static @Nullable String discordToken() {
@@ -68,6 +92,41 @@ public class Config {
         return serverImage;
     }
 
+    public static @Nullable GuildMessageChannel discordChannel() {
+        if (DiscordBot.getJda() == null) throw new NullPointerException("Discord Bot not initialized!");
+        return DiscordBot.getJda().getChannelById(GuildMessageChannel.class, channel);
+    }
+    // Home
+
+    public static boolean isHomeEnabled() {
+        return homeEnabled;
+    }
+
+    public static int getHomePerPlayer() {
+        return homePerPlayer;
+    }
+
+    public static int getHomeTimeout() {
+        return homeTimeout;
+    }
+
+    public static int getHomeCooldown() {
+        return homeCooldown;
+    }
+
+    // Shop
+
+    public static boolean isShopEnabled() {
+        return shopEnabled;
+    }
+
+    public static List<Enchantment> getAncientTomes() {
+        return ancientTomes.stream().map(NamespacedKey::fromString).filter(Objects::nonNull).map(RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT)::get).filter(Objects::nonNull).toList();
+    }
+
+
+    // Messages
+
     public static @Nullable Component joinMessage(Player player) {
         return getComponent(playerJoin, player.name());
     }
@@ -85,9 +144,26 @@ public class Config {
         });
     }
 
+    // Enchantments
     public static boolean enchantments() {
-        return enchantments;
+        return enchantmentsEnabled;
     }
+
+    public static List<Enchantments> enabledEnchantments() {
+        if (!enchantments()) return List.of();
+        ArrayList<Enchantments> list = new ArrayList<>(1);
+        if (CiklesMC.getInstance().getConfig().getBoolean("enchantments.telekinesis"))
+            list.add(Enchantments.TELEKINESIS);
+        if (CiklesMC.getInstance().getConfig().getBoolean("enchantments.tree_chopper"))
+            list.add(Enchantments.TREE_CHOPPER);
+        if (CiklesMC.getInstance().getConfig().getBoolean("enchantments.vein"))
+            list.add(Enchantments.VEIN);
+        if (CiklesMC.getInstance().getConfig().getBoolean("enchantments.oracle"))
+            list.add(Enchantments.ORACLE);
+        return list;
+    }
+
+    // Mob Griefing
 
     public static boolean creeperExplosions() {
         return creeperExplosions;
@@ -101,6 +177,8 @@ public class Config {
         return enderman;
     }
 
+    // Graves
+
     public static boolean graves() {
         return graves;
     }
@@ -109,14 +187,14 @@ public class Config {
     public static void load() {
         FileConfiguration config = CiklesMC.getInstance().getConfig();
 
-        discord = config.getBoolean("discord.enabled");
+        discordRcpEnabled = config.getBoolean("discord.enabled");
         token = getString("discord.token");
         if (token == null || token.isBlank()) {
-            CiklesMC.getInstance().getSLF4JLogger().warn("Discord-Sync was disabled because no token was defined!");
-            discord = false;
+            CiklesMC.getInstance().getSLF4JLogger().warn("Discord-RCP was disabled because no token was defined!");
+            discordRcpEnabled = false;
         } else if (token.matches("^[A-Za-z0-9]{24}\\.[A-Za-z0-9_-]{6}\\.[A-Za-z0-9_-]{27}$")) {
-            CiklesMC.getInstance().getSLF4JLogger().warn("Discord-Sync was disabled because given token isn't valid!");
-            discord = false;
+            CiklesMC.getInstance().getSLF4JLogger().warn("Discord-RCP was disabled because given token isn't valid!");
+            discordRcpEnabled = false;
         }
         channel = config.getLong("discord.channel");
         webhookUrl = getString("discord.webhook-url");
@@ -127,7 +205,15 @@ public class Config {
         chat = getComponent("messages.chat");
         if (chat == null) renderer = null;
 
-        enchantments = config.getBoolean("enchantments.enabled");
+        homeEnabled = config.getBoolean("home.enabled");
+        homeCooldown = config.getInt("home.cooldown");
+        homeTimeout = config.getInt("home.timeout");
+        homePerPlayer = config.getInt("home.amount");
+
+        shopEnabled = config.getBoolean("shop.enabled");
+        ancientTomes = config.getStringList("shop.ancient-tomes");
+
+        enchantmentsEnabled = config.getBoolean("enchantments.enabled");
 
         creeperExplosions = config.getBoolean("mob-griefing.creeper-explosions");
 
@@ -174,24 +260,6 @@ public class Config {
         return renderer;
     }
 
-    public static List<Enchantments> enabledEnchantments() {
-        if (!enchantments()) return List.of();
-        ArrayList<Enchantments> list = new ArrayList<>(1);
-        if (CiklesMC.getInstance().getConfig().getBoolean("enchantments.telekinesis"))
-            list.add(Enchantments.TELEKINESIS);
-        if (CiklesMC.getInstance().getConfig().getBoolean("enchantments.tree_chopper"))
-            list.add(Enchantments.TREE_CHOPPER);
-        if (CiklesMC.getInstance().getConfig().getBoolean("enchantments.vein"))
-            list.add(Enchantments.VEIN);
-        if (CiklesMC.getInstance().getConfig().getBoolean("enchantments.oracle"))
-            list.add(Enchantments.ORACLE);
-        return list;
-    }
-
-    public static @Nullable GuildMessageChannel discordChannel() {
-        if (DiscordBot.getJda() == null) throw new NullPointerException("Discord Bot not initialized!");
-        return DiscordBot.getJda().getChannelById(GuildMessageChannel.class, channel);
-    }
 
 
     public static @NotNull Guild getGuild() {
@@ -219,13 +287,13 @@ public class Config {
         // Load external file if present
         if (externalPresent)
             try (InputStream in = new FileInputStream(externalFile)) {
-                external.load(new InputStreamReader(in, StandardCharsets.UTF_8));
+                external.load(new InputStreamReader(in, StandardCharsets.ISO_8859_1));
             }
 
         // Load internal properties
         try (InputStream in = Config.class.getResourceAsStream(internalResourcePath)) {
             if (in != null)
-                internal.load(new InputStreamReader(in, StandardCharsets.UTF_8));
+                internal.load(new InputStreamReader(in, StandardCharsets.ISO_8859_1));
             else if (!externalPresent) throw new IOException("No internal or external file Present!");
             else return external;
         }
@@ -248,7 +316,7 @@ public class Config {
         // If file doesn't exist or was updated -> save
         if (updated || !externalFile.exists()) {
             try (OutputStream out = new FileOutputStream(externalFile)) {
-                external.store(new OutputStreamWriter(out, StandardCharsets.UTF_8), "Generated or Updated by CiklesMC");
+                external.store(new OutputStreamWriter(out, StandardCharsets.ISO_8859_1), "Generated or Updated by CiklesMC");
             }
         }
 
@@ -270,14 +338,19 @@ public class Config {
         public static final String PLAYER_NOT_CONNECTED = "commands.player_not_connected";
         public static final String NOT_ENOUGH_MONEY = "commands.economy.not_enough_money";
         public static final String HOME_NOT_FOUND = "commands.home.not_found";
+        public static final String HOME_REACHED_MAXIMUM = "commands.home.reached_maximum";
         public static final String HOME_CREATED = "commands.home.created";
         public static final String HOME_REMOVED = "commands.home.removed";
+        public static final String PENDING_TELEPORT = "core.pending_teleport";
+        public static final String TELEPORT_CANCELED = "core.teleport_canceled";
         public static final String SHOP_TITLE_VILLAGER_TRADES = "commands.shop.title.villager_trades";
         public static final String SHOP_NEXT_PAGE = "commands.shop.redirect.next_page";
         public static final String SHOP_PREVIOUS_PAGE = "commands.shop.redirect.previous_page";
         public static final String SHOP_MAIN_PAGE = "commands.shop.redirect.main";
         public static final String NOT_AVAILABLE_YET = "commands.shop.not_available";
+        public static final String SHOP_SPECIAL = "commands.shop.title.special";
         public static final String SHOP_ENCHANTMENT = "commands.shop.title.enchantments";
+        public static final String SHOP_ANCIENT_TOME = "commands.shop.title.ancient-tome";
 
         Translations() {
         }

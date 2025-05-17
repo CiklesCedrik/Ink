@@ -74,7 +74,7 @@ public class GraveListener implements Listener {
 
             if (isInBounds(x, y, z, radius)) {
                 Location target = new Location(initial.getWorld(), worldX, worldY, worldZ);
-                if (target.getBlock().isEmpty()) return target;
+                if (!(target.getBlock().isLiquid() || !target.getBlock().isEmpty())) return target;
 
                 int[][] directions = {{0, 1, 0}, {0, -1, 0}, {1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}};
 
@@ -91,7 +91,7 @@ public class GraveListener implements Listener {
                 }
             }
         }
-        return null;
+        return new Location(initial.getWorld(), initial.blockX(), initial.getWorld().getHighestBlockYAt(initial.blockX(), initial.blockZ()) + 1D, initial.blockZ());
     }
 
     // Sets the middle of the search sphere, away from the minimum and maximum build height
@@ -116,41 +116,41 @@ public class GraveListener implements Listener {
         Player player = event.getPlayer();
         Location loc = getGraveLocation(player.getLocation(), 20);
 
-        if (loc == null) {
+        try {
+            // Set Skull on Location of death
+            loc.getBlock().setType(Material.PLAYER_HEAD, false);
+            Skull skull = (Skull) loc.getBlock().getState();
+            skull.setOwningPlayer(player);
+            skull.setPlayerProfile(player.getPlayerProfile());
+            skull.update();
+
+            Inventory inventory = player.getInventory();
+            int xp = player.getTotalExperience();
+            PersistentDataContainer container = loc.getWorld().getPersistentDataContainer();
+
+            // Clear Drops and Exp
+            event.getDrops().clear();
+            event.setShouldDropExperience(true);
+            event.setDroppedExp(Math.round(xp * 0.5f));
+            // Loading other graves of Player
+            ArrayList<PersistentDataContainer> graves = new ArrayList<>(DataUtil.getSubArrayContainer(container, GRAVE_KEY));
+
+            // Save Inventory and Exp into a new container.
+            PersistentDataContainer deathPoint = player.getPersistentDataContainer().getAdapterContext().newPersistentDataContainer();
+            DataUtil.set(deathPoint, POSITION_KEY, new int[]{loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()}, PersistentDataType.INTEGER_ARRAY);
+            DataUtil.set(deathPoint, EXP_KEY, Math.round(xp * 0.2f), PersistentDataType.INTEGER);
+            DataUtil.set(deathPoint, INVENTORY_CONTENTS_KEY, INVENTORY_CONTENTS.toPrimitive(Arrays.stream(inventory.getContents()).map(it -> it == null ? ItemStack.empty() : it).toList(), player.getPersistentDataContainer().getAdapterContext()), PersistentDataType.LIST.dataContainers());
+            DataUtil.set(deathPoint, OWNER_KEY, UUID.toPrimitive(player.getUniqueId(), deathPoint.getAdapterContext()), PersistentDataType.LONG_ARRAY);
+
+            // Add to the list and save into the current world.
+            graves.add(deathPoint);
+            DataUtil.set(container, GRAVE_KEY, graves, PersistentDataType.LIST.dataContainers());
+        } catch (Exception no) {
+            CiklesMC.getInstance().getSLF4JLogger().warn("Failed to create grave for {}", player.getName(), no);
             player.sendMessage(Component.translatable(GRAVE_FAILED, NamedTextColor.RED));
-            return;
+        } finally {
+            player.sendMessage(Component.translatable(GRAVE_SPAWNED, NamedTextColor.YELLOW, Component.text("X:" + loc.getBlockX() + " Y:" + loc.getBlockY() + " Z:" + loc.getBlockZ())));
         }
-
-        // Set Skull on Location of death
-        loc.getBlock().setType(Material.PLAYER_HEAD, false);
-        Skull skull = (Skull) loc.getBlock().getState();
-        skull.setOwningPlayer(player);
-        skull.setPlayerProfile(player.getPlayerProfile());
-        skull.update();
-
-        Inventory inventory = player.getInventory();
-        int xp = player.getTotalExperience();
-        PersistentDataContainer container = loc.getWorld().getPersistentDataContainer();
-
-        // Clear Drops and Exp
-        event.getDrops().clear();
-        event.setShouldDropExperience(true);
-        event.setDroppedExp(Math.round(xp * 0.5f));
-        // Loading other graves of Player
-        ArrayList<PersistentDataContainer> graves = new ArrayList<>(DataUtil.getSubArrayContainer(container, GRAVE_KEY));
-
-        // Save Inventory and Exp into a new container.
-        PersistentDataContainer deathPoint = player.getPersistentDataContainer().getAdapterContext().newPersistentDataContainer();
-        DataUtil.set(deathPoint, POSITION_KEY, new int[]{loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()}, PersistentDataType.INTEGER_ARRAY);
-        DataUtil.set(deathPoint, EXP_KEY, Math.round(xp * 0.2f), PersistentDataType.INTEGER);
-        DataUtil.set(deathPoint, INVENTORY_CONTENTS_KEY, INVENTORY_CONTENTS.toPrimitive(Arrays.stream(inventory.getContents()).map(it -> it == null ? ItemStack.empty() : it).toList(), player.getPersistentDataContainer().getAdapterContext()), PersistentDataType.LIST.dataContainers());
-        DataUtil.set(deathPoint, OWNER_KEY, UUID.toPrimitive(player.getUniqueId(), deathPoint.getAdapterContext()), PersistentDataType.LONG_ARRAY);
-
-        // Add to the list and save into the current world.
-        graves.add(deathPoint);
-        DataUtil.set(container, GRAVE_KEY, graves, PersistentDataType.LIST.dataContainers());
-
-        player.sendMessage(Component.translatable(GRAVE_SPAWNED, NamedTextColor.YELLOW, Component.text("X:" + loc.getBlockX() + " Y:" + loc.getBlockY() + " Z:" + loc.getBlockZ())));
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)

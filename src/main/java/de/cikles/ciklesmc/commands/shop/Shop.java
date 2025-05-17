@@ -11,6 +11,7 @@ import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -27,10 +28,9 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.MerchantRecipe;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 
@@ -75,7 +75,8 @@ public class Shop extends LiteralArgumentBuilder<CommandSourceStack> implements 
             return;
         }
         if (event.getClickedInventory() == null) return;
-        if (event.getClickedInventory().getType().equals(InventoryType.MERCHANT)) return;
+        if (event.getClickedInventory().getType().equals(InventoryType.MERCHANT))
+            return;
         ItemStack clicked = event.getCurrentItem();
         if (clicked == null) return;
         event.setCancelled(true);
@@ -103,28 +104,80 @@ public class Shop extends LiteralArgumentBuilder<CommandSourceStack> implements 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onAnvilUse(PrepareAnvilEvent event) {
         if (event.getInventory().getFirstItem() == null) return;
-        if (event.getInventory().getSecondItem() == null) return;
-        if (event.getInventory().getResult() == null) return;
+
         ItemStack first = event.getInventory().getFirstItem();
-        ItemStack second = event.getInventory().getSecondItem();
-        ItemStack result = event.getInventory().getResult();
-
         ItemMeta firstMeta = first.getItemMeta();
+
+        if (isAncientTome(first)) {
+            event.setResult(null);
+            return;
+        }
+        if (event.getInventory().getSecondItem() == null) return;
+        ItemStack second = event.getInventory().getSecondItem();
+
         ItemMeta secondMeta = second.getItemMeta();
-        ItemMeta meta = result.getItemMeta();
 
+        HashMap<Enchantment, Integer> appliedEnchantments = new HashMap<>();
 
-        HashMap<Enchantment, Integer> enchantments = new HashMap<>();
-        getEnchantments(meta, enchantments);
-        getEnchantments(firstMeta, enchantments);
-        getEnchantments(secondMeta, enchantments);
-        event.getView().setMaximumRepairCost(70);
-        if (meta instanceof EnchantmentStorageMeta enchantmentStorageMeta)
-            enchantments.forEach((enchantment, level) -> enchantmentStorageMeta.addStoredEnchant(enchantment, level, true));
-        else enchantments.forEach((enchantment, level) -> meta.addEnchant(enchantment, level, true));
-        result.setItemMeta(meta);
+        if (isAncientTome(second)) {
+            if (first.getType().equals(Material.ENCHANTED_BOOK) || first.getType().equals(Material.BOOK)) {
+                event.setResult(null);
+                return;
+            }
+            getEnchantments(firstMeta, appliedEnchantments);
+            Enchantment target = secondMeta.getEnchants().keySet().stream().findAny().orElse(null);
+            if (target == null || !appliedEnchantments.containsKey(target)) {
+                event.setResult(null);
+                return;
+            }
+            if (appliedEnchantments.get(target) != target.getMaxLevel()) {
+                event.setResult(null);
+                return;
+            }
+            appliedEnchantments.remove(target);
+
+            event.setResult(createResultItem(first, firstMeta, appliedEnchantments, target));
+            event.getView().setRepairCost(35);
+        }
+        appliedEnchantments.clear();
+
+        if (event.getInventory().getResult() == null) return;
+
+        ItemStack result = event.getInventory().getResult();
+        ItemMeta resultMeta = result.getItemMeta();
+
+        getEnchantments(resultMeta, appliedEnchantments);
+        getEnchantments(firstMeta, appliedEnchantments);
+        getEnchantments(secondMeta, appliedEnchantments);
+
+        if (resultMeta instanceof EnchantmentStorageMeta enchantmentStorageMeta)
+            appliedEnchantments.forEach((enchantment, level) -> enchantmentStorageMeta.addStoredEnchant(enchantment, level, true));
+        else appliedEnchantments.forEach((enchantment, level) -> resultMeta.addEnchant(enchantment, level, true));
+        result.setItemMeta(resultMeta);
         event.setResult(result);
+    }
 
+    private boolean isAncientTome(ItemStack item) {
+        return !(!item.getType().equals(Material.NETHERITE_SCRAP) || !(item.getItemMeta().displayName() instanceof TextComponent text) || !text.content().equals("Ancient Tome") || !text.color().equals(TextColor.color(0xC24492)));
+    }
+
+    private ItemStack createResultItem(ItemStack first, ItemMeta firstMeta, Map<Enchantment, Integer> appliedEnchantments, Enchantment target) {
+        ItemStack result = first.getType().asItemType().createItemStack();
+        ItemMeta meta = result.getItemMeta();
+        meta.displayName(firstMeta.displayName());
+        if (meta instanceof EnchantmentStorageMeta enchantmentStorageMeta) {
+            enchantmentStorageMeta.addStoredEnchant(target, target.getMaxLevel() + 1, true);
+            appliedEnchantments.forEach((enchantment, lvl) -> enchantmentStorageMeta.addStoredEnchant(enchantment, lvl, true));
+        } else {
+            meta.addEnchant(target, target.getMaxLevel() + 1, true);
+            appliedEnchantments.forEach((enchantment, lvl) -> meta.addEnchant(enchantment, lvl, true));
+        }
+        if (firstMeta instanceof Damageable damageable && result instanceof Damageable resultDamageable) {
+            resultDamageable.setDamage(damageable.getDamage());
+            resultDamageable.setMaxDamage(damageable.getMaxDamage());
+        }
+        result.setItemMeta(meta);
+        return result;
     }
 
     private void getEnchantments(ItemMeta meta, Map<Enchantment, Integer> enchantments) {
@@ -150,17 +203,18 @@ public class Shop extends LiteralArgumentBuilder<CommandSourceStack> implements 
 
             fillContents(inventory, player, category, items, size, lines, page);
 
-            player.getServer().getGlobalRegionScheduler().run(CiklesMC.getInstance(), t -> player.openInventory(inventory));
+            player.getScheduler().run(CiklesMC.getInstance(), t -> player.openInventory(inventory), null);
         } else {
             Merchant merchant = Bukkit.getServer().createMerchant(title);
             ItemStack item = createItemStack(Material.COMPASS, Component.text(Objects.requireNonNull(CiklesMC.translationRegistry.translate(SHOP_MAIN_PAGE, player.locale())).format(null), Style.style().decoration(TextDecoration.ITALIC, false).color(NamedTextColor.DARK_AQUA).build()), false);
-            // Sell
+
             MerchantRecipe main = new MerchantRecipe(item, 1);
             main.addIngredient(item);
             List<MerchantRecipe> list = new ArrayList<>(category.recipe());
             list.add(0, main);
+
             merchant.setRecipes(list);
-            setSpecialPrice(player, merchant);
+            player.getScheduler().run(CiklesMC.getInstance(), t -> player.openMerchant(merchant, true), null);
         }
 
     }
@@ -205,15 +259,7 @@ public class Shop extends LiteralArgumentBuilder<CommandSourceStack> implements 
         trades.add(0, main);
         merchant.setRecipes(trades);
 
-        setSpecialPrice(player, merchant);
-    }
-
-    private void setSpecialPrice(@NotNull Player player, Merchant merchant) {
-        PotionEffect hero = player.getPotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE);
-        if (hero != null)
-            merchant.getRecipes().forEach(r -> r.setSpecialPrice(Math.round(r.getIngredients().get(0).getAmount() * (5 - hero.getAmplifier()) / 5f) - r.getIngredients().get(0).getAmount()));
-
-        player.getServer().getGlobalRegionScheduler().run(CiklesMC.getInstance(), t -> player.openMerchant(merchant, true));
+        player.getScheduler().run(CiklesMC.getInstance(), t -> player.openMerchant(merchant, true), null);
     }
 
     private void clicked(@NotNull Player player, @NotNull ShopCategory category, @NotNull ItemStack clicked, int page) {
@@ -280,11 +326,14 @@ public class Shop extends LiteralArgumentBuilder<CommandSourceStack> implements 
             case LOOM:
                 inventory(ShopCategory.SHEPHERD, 1, player);
                 break;
-            case ENDER_CHEST:
+            case NETHER_STAR:
                 inventory(ShopCategory.CUSTOM, 1, player);
                 break;
             case ENCHANTED_BOOK:
                 inventory(ShopCategory.ENCHANTMENTS, 1, player);
+                break;
+            case NETHERITE_SCRAP:
+                inventory(ShopCategory.ANCIENT_TOMES, 1, player);
                 break;
             default:
                 break;
