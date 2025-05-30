@@ -57,7 +57,7 @@ public class Home implements Listener {
     private static final NamespacedKey WORLD_KEY = NamespacedKey.fromString("world");
     private static final NamespacedKey LAST_TP = NamespacedKey.fromString("last_tp");
 
-    private static final ArrayList<Entity> pendingTeleports = new ArrayList<>();
+    private static final ArrayList<Entity> PENDING_TELEPORTS = new ArrayList<>();
 
     private static CompletableFuture<Suggestions> getSuggestionsCompletableFuture(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
         Entity entity = context.getSource().getExecutor();
@@ -72,13 +72,13 @@ public class Home implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerMove(PlayerMoveEvent event) {
-        if (event.getFrom().getX() != event.getTo().getX() || event.getFrom().getZ() != event.getTo().getZ())
-            pendingTeleports.remove(event.getPlayer());
+        if ((event.getFrom().blockX() != event.getTo().blockX()) || (event.getFrom().blockZ() != event.getTo().blockZ()))
+            PENDING_TELEPORTS.remove(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlayerMove(EntityDamageEvent event) {
-        if (event.getEntity() instanceof Player player) pendingTeleports.remove(player);
+    public void onEntityDamage(EntityDamageEvent event) {
+        if (event.getEntity() instanceof Player player) PENDING_TELEPORTS.remove(player);
     }
 
     private static class SetHome extends LiteralArgumentBuilder<CommandSourceStack> implements Command<CommandSourceStack>, SuggestionProvider<CommandSourceStack> {
@@ -137,11 +137,11 @@ public class Home implements Listener {
                 entity.sendMessage(Component.translatable(WAIT_BEFORE_TELEPORTING, NamedTextColor.RED, Component.text(Config.getHomeCooldown()), Component.text(Config.getHomeCooldown() - Math.round((world.getGameTime() - lastTP) / 1200D), NamedTextColor.YELLOW)));
                 return SINGLE_SUCCESS;
             }
-            pendingTeleports.add(entity);
+            PENDING_TELEPORTS.add(entity);
             entity.sendMessage(Component.translatable(PENDING_TELEPORT, NamedTextColor.RED));
             AtomicInteger timeout = new AtomicInteger(Config.getHomeTimeout());
             Bukkit.getAsyncScheduler().runAtFixedRate(CiklesMC.getInstance(), t -> {
-                if (!pendingTeleports.contains(entity)) {
+                if (!PENDING_TELEPORTS.contains(entity)) {
                     entity.sendMessage(Component.translatable(TELEPORT_CANCELED, NamedTextColor.RED));
                     t.cancel();
                     return;
@@ -151,7 +151,7 @@ public class Home implements Listener {
                     return;
                 }
 
-                pendingTeleports.remove(entity);
+                PENDING_TELEPORTS.remove(entity);
                 entity.teleportAsync(new Location(world, loc[0], loc[1], loc[2]), PlayerTeleportEvent.TeleportCause.COMMAND).thenAccept(success -> {
                     if (Boolean.FALSE.equals(success))
                         entity.sendMessage(Component.translatable(FAILED_TO_TELEPORT, NamedTextColor.RED));

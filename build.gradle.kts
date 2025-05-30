@@ -3,10 +3,11 @@ plugins {
     idea
     id("xyz.jpenilla.run-paper") version "2.3.1"
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.16"
+    kotlin("jvm") version "2.0.21"
 }
 
 group = "de.cikles"
-version = "1.4-ALPHA"
+version = "1.4.2-ALPHA"
 
 repositories {
     gradlePluginPortal()
@@ -29,6 +30,7 @@ dependencies {
     implementation("net.dv8tion:JDA:$discordJDA") {
         exclude(module = "opus-java")
     }
+    implementation(kotlin("stdlib"))
 }
 tasks {
     runPaper.folia.registerTask()

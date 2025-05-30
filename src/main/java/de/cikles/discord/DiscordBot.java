@@ -27,8 +27,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 
-import static net.dv8tion.jda.api.requests.GatewayIntent.SCHEDULED_EVENTS;
-import static net.dv8tion.jda.api.requests.GatewayIntent.*;
+import static net.dv8tion.jda.api.requests.GatewayIntent.GUILD_MESSAGES;
+import static net.dv8tion.jda.api.requests.GatewayIntent.MESSAGE_CONTENT;
 import static net.dv8tion.jda.api.utils.cache.CacheFlag.*;
 
 public class DiscordBot {
@@ -49,10 +49,10 @@ public class DiscordBot {
             return;
         }
         Bukkit.getAsyncScheduler().runNow(CiklesMC.getInstance(), r -> {
-            JDABuilder builder = JDABuilder.create(Config.discordToken(), GUILD_MESSAGES, GUILD_MEMBERS, MESSAGE_CONTENT, GUILD_VOICE_STATES, SCHEDULED_EVENTS, GUILD_MESSAGE_REACTIONS);
-            builder.setMemberCachePolicy(MemberCachePolicy.DEFAULT);
+            JDABuilder builder = JDABuilder.create(Config.discordToken(), GUILD_MESSAGES, MESSAGE_CONTENT);
+            builder.setMemberCachePolicy(MemberCachePolicy.NONE);
             builder.setChunkingFilter(ChunkingFilter.NONE);
-            builder.disableCache(ACTIVITY, CLIENT_STATUS, ONLINE_STATUS, EMOJI, STICKER);
+            builder.disableCache(ACTIVITY, CLIENT_STATUS, ONLINE_STATUS, EMOJI, STICKER, VOICE_STATE, SCHEDULED_EVENTS, FORUM_TAGS, MEMBER_OVERRIDES, ROLE_TAGS);
             builder.setStatus(OnlineStatus.ONLINE);
             builder.addEventListeners(new ListenerAdapter() {
 
@@ -62,7 +62,7 @@ public class DiscordBot {
                         return;
                     if (event.getChannel().getIdLong() != Config.discordChannelId()) return;
                     Role role = getHighestRoleOfDiscordMember(event.getAuthor());
-                    Bukkit.getServer().sendMessage(Component.text("[DISCORD] ", NamedTextColor.AQUA).append(Component.text(event.getAuthor().getEffectiveName(), TextColor.color(role.getColorRaw()))).hoverEvent(HoverEvent.showText(Component.text(role.getName()).color(TextColor.color(role.getColorRaw())))).append(Component.text(": " + event.getMessage().getContentRaw(), NamedTextColor.GRAY)));
+                    Bukkit.getServer().sendMessage(Component.text("[DISCORD] ", NamedTextColor.AQUA).append(Component.text(event.getAuthor().getEffectiveName(), TextColor.color(role.getColorRaw())).hoverEvent(HoverEvent.showText(Component.text(role.getName()).color(TextColor.color(role.getColorRaw()))))).append(Component.text(": " + event.getMessage().getContentRaw(), NamedTextColor.GRAY)));
                 }
 
             });
@@ -71,7 +71,9 @@ public class DiscordBot {
     }
 
     public static void stop() {
-        if (jda != null) jda.shutdownNow();
+        if (jda != null) {
+            jda.shutdownNow();
+        }
     }
 
     public static void sendPlayerMessage(String name, String msg) {

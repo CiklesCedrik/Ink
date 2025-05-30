@@ -1,5 +1,4 @@
 # Fields with ** must be set! (If the category is enabled)
-
 # Sends messages from Minecraft to Discord and vice versa
 discord:
   enabled: false
@@ -57,7 +56,7 @@ enchantments:
   vein: true
   oracle: true
 
-mob-griefing: # Set to disable if you want to prevent/disable the damage
+mob-griefing: # Set to true if you want to prevent/disable the damage
   # Damage by Creeper Explosions
   creeper-explosions: true
   # Fire charges wich are shoot by a Ghast

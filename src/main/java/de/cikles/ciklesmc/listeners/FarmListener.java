@@ -38,7 +38,7 @@ public class FarmListener implements Listener {
                     dropItem(b.getLocation(), it, player);
                 });
                 break;
-            case SWEET_BERRIES, GLOW_BERRIES, SWEET_BERRY_BUSH, GLOW_LICHEN, PUMPKIN_STEM, PUMPKIN_SEEDS, MELON_STEM, MELON_SEEDS, BAMBOO:
+            case SWEET_BERRIES, GLOW_BERRIES, SWEET_BERRY_BUSH, GLOW_LICHEN, PUMPKIN_STEM, PUMPKIN_SEEDS, MELON_STEM, MELON_SEEDS, BAMBOO, CAVE_VINES:
                 return;
             default:
                 dropItem(b.getLocation(), new ItemStack(b.getType(), b.getDrops(player.getInventory().getItemInMainHand(), player).stream().mapToInt(ItemStack::getAmount).sum() - 1), player);

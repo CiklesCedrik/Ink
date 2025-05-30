@@ -12,7 +12,7 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.PatternReplacementResult;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.kyori.adventure.translation.TranslationRegistry;
+import net.kyori.adventure.translation.TranslationStore;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.enchantments.Enchantment;
@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -268,13 +269,19 @@ public class Config {
         return channel.getGuild();
     }
 
-    public static void registerLocale(TranslationRegistry registry, Locale locale) {
+    public static void registerLocale(TranslationStore<MessageFormat> store, Locale locale) {
         File externalFile = new File(new File(CiklesMC.getInstance().getDataFolder(), "lang"), locale.toLanguageTag() + ".properties");
         String internalPath = "/lang/Lang_" + locale.toLanguageTag().replace('-', '_') + ".properties";
         try {
             Properties merged = mergeWithInternalDefaults(externalFile, internalPath);
-            ResourceBundle bundle = new PropertyResourceBundle(new StringReader(toPropertyString(merged)));
-            registry.registerAll(locale, bundle, true);
+
+            // Convert Properties to Map<String, String>
+            Map<String, MessageFormat> translations = new HashMap<>();
+            for (String key : merged.stringPropertyNames()) {
+                translations.put(key, new MessageFormat(merged.getProperty(key)));
+            }
+
+            store.registerAll(locale, translations);
         } catch (IOException e) {
             CiklesMC.getInstance().getSLF4JLogger().warn("Failed to register locale", e);
         }
